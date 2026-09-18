@@ -68,8 +68,9 @@ COMPANY_ADDRESS = (
     "Thành phố Hồ Chí Minh, Việt Nam"
 )
 
-PAY_MONTH = "09/2026"
+from datetime import datetime
 
+PAY_MONTH = datetime.now().strftime("%m/%Y")
 
 # ------------------------------------------------------------
 # 5. Logging
@@ -1384,3 +1385,4 @@ if __name__ == "__main__":
         logging.exception(
             f"Lỗi nghiêm trọng: {error}"
         )
+	
