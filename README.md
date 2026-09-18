@@ -3,15 +3,8 @@ Giới thiệu
 
 Đây là đồ án Python xây dựng hệ thống tự động tạo phiếu lương PDF từ dữ liệu nhân viên trong Excel.
 
-Thay vì nhập thông tin và tạo từng phiếu lương thủ công, chương trình tự động:
+Thay vì nhập thông tin và tạo từng phiếu lương thủ công, chương trình tự động đọc dữ liệu, tính toán tiền lương, tạo phiếu lương và xuất thành các file PDF riêng cho từng nhân viên.
 
-Đọc dữ liệu nhân viên từ file Excel.
-Kiểm tra và xử lý dữ liệu đầu vào.
-Tính toán tiền lương.
-Tạo phiếu lương bằng HTML/CSS.
-Chuyển phiếu lương thành file PDF.
-Lưu mỗi phiếu lương thành một file riêng.
-Ghi lại quá trình xử lý vào file log.
 Mục tiêu
 
 Đề tài hướng đến việc ứng dụng Python để tự động hóa quy trình tạo báo cáo lương.
@@ -30,7 +23,7 @@ Chức năng chính
 
 Chương trình sử dụng Pandas và OpenPyXL để đọc dữ liệu từ file employees.xlsx.
 
-Dữ liệu nhân viên có thể bao gồm:
+Dữ liệu nhân viên bao gồm các thông tin như:
 
 Mã nhân viên
 Tên nhân viên
@@ -86,13 +79,13 @@ Thời gian xử lý.
 Công nghệ sử dụng
 Công nghệ	Mục đích
 Python	Ngôn ngữ lập trình chính
-Pandas	Đọc và xử lý dữ liệu
-OpenPyXL	Đọc file Excel .xlsx
+Pandas	Đọc và xử lý dữ liệu Excel
+OpenPyXL	Đọc file .xlsx
 WeasyPrint	Chuyển HTML/CSS thành PDF
 HTML	Xây dựng nội dung phiếu lương
 CSS	Thiết kế giao diện phiếu lương
 Cấu trúc Project
-salary-report/
+PDF-Automation-/
 │
 ├── salary_report.py
 ├── employees.xlsx
@@ -102,7 +95,6 @@ salary-report/
 └── salary/
     ├── NV001.pdf
     ├── NV002.pdf
-    ├── NV003.pdf
     └── ...
 
 Trong đó:
@@ -131,6 +123,7 @@ Lưu vào thư mục salary/
       ↓
 Ghi process_log.txt
 Mô hình tính lương
+Ngày công
 
 Hệ thống phân biệt giữa:
 
@@ -138,7 +131,6 @@ Ngày công chuẩn.
 Ngày công thực tế.
 Ngày nghỉ phép hưởng lương.
 Ngày nghỉ không lương.
-Tính ngày công
 
 Ngày công tính lương được xác định theo:
 
@@ -170,11 +162,11 @@ Các khoản khấu trừ
 
 Hệ thống có thể tính các khoản:
 
-BHXH.
-BHYT.
-BHTN.
-Thuế TNCN.
-Các khoản phạt hoặc khấu trừ khác nếu có.
+BHXH
+BHYT
+BHTN
+Thuế TNCN
+Các khoản phạt hoặc khấu trừ khác nếu có
 Cài đặt
 
 Cài đặt các thư viện cần thiết:
@@ -191,7 +183,7 @@ pip show pandas
 pip show openpyxl
 pip show weasyprint
 
-Đối với Windows, WeasyPrint có thể yêu cầu thêm thư viện GTK/MSYS2 để hoạt động.
+Lưu ý: Trên Windows, WeasyPrint có thể yêu cầu thêm thư viện GTK/MSYS2 để hoạt động.
 
 Hướng dẫn sử dụng
 Bước 1: Chuẩn bị file Excel
@@ -206,9 +198,7 @@ Bước 3: Chạy chương trình
 python salary_report.py
 Bước 4: Kiểm tra kết quả
 
-Các phiếu lương được lưu trong thư mục salary/.
-
-Ví dụ:
+Sau khi chương trình chạy xong, các phiếu lương sẽ được lưu trong thư mục salary/.
 
 salary/
 ├── NV001.pdf
@@ -219,7 +209,7 @@ File process_log.txt cũng được tạo để theo dõi quá trình xử lý.
 
 Dữ liệu đầu vào
 
-File employees.xlsx có thể sử dụng cấu trúc:
+File employees.xlsx sử dụng cấu trúc dữ liệu tương tự:
 
 Mã NV	Tên NV	Chức vụ	Lương cơ bản	Ngày công chuẩn	Ngày công đi làm	Thưởng	Phụ cấp
 NV001	Nguyễn Văn A	Nhân viên	10000000	26	26	1000000	500000
@@ -228,9 +218,6 @@ NV002	Trần Văn B	Nhân viên	12000000	26	25	500000	300000
 Có thể bổ sung thêm các trường dữ liệu phục vụ cho việc tính lương.
 
 Kết quả đầu ra
-
-Hệ thống tạo ra hai loại kết quả chính.
-
 Phiếu lương PDF
 
 Mỗi nhân viên có một file PDF riêng.
