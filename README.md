@@ -1,318 +1,227 @@
 Automated PDF Salary Report Generation
-Giới thiệu
 
-Đây là đồ án Python xây dựng hệ thống tự động tạo phiếu lương PDF từ dữ liệu nhân viên trong Excel.
+Python automation system for generating employee salary-slip PDF reports from Excel data.
 
-Thay vì nhập thông tin và tạo từng phiếu lương thủ công, chương trình tự động đọc dữ liệu, tính toán tiền lương, tạo phiếu lương và xuất thành các file PDF riêng cho từng nhân viên.
+The system reads employee information from an Excel file, calculates salary components, generates dynamic PDF salary slips and records the processing results in a log file.
 
-Mục tiêu
-
-Đề tài hướng đến việc ứng dụng Python để tự động hóa quy trình tạo báo cáo lương.
-
-Các mục tiêu chính:
-
-Tự động đọc dữ liệu nhân viên từ Excel.
-Tự động tính toán tiền lương.
-Tự động tạo phiếu lương PDF.
-Giảm thao tác thủ công.
-Xử lý dữ liệu không hợp lệ.
-Ghi log quá trình xử lý.
-Xây dựng hệ thống có khả năng mở rộng trong tương lai.
-Chức năng chính
-1. Đọc dữ liệu Excel
-
-Chương trình sử dụng Pandas và OpenPyXL để đọc dữ liệu từ file employees.xlsx.
-
-Dữ liệu nhân viên bao gồm các thông tin như:
-
-Mã nhân viên
-Tên nhân viên
-Chức vụ
-Lương cơ bản
-Lương đóng BHXH
-Ngày công chuẩn
-Ngày công đi làm
-Ngày nghỉ phép hưởng lương
-Ngày nghỉ không lương
-Thưởng
-Phụ cấp
-Số người phụ thuộc
-Phạt
-2. Tính toán tiền lương
-
-Hệ thống tự động tính:
-
-Lương theo ngày công.
-Tổng thu nhập.
-BHXH.
-BHYT.
-BHTN.
-Thu nhập chịu thuế.
-Thuế TNCN.
-Tổng các khoản khấu trừ.
-Tiền lương thực lĩnh.
-3. Tạo phiếu lương PDF
-
-Mỗi nhân viên được tạo một phiếu lương PDF riêng.
-
-Tên file được đặt theo mã nhân viên.
-
-Ví dụ:
-
-NV001.pdf
-NV002.pdf
-NV003.pdf
-4. Tự động tạo thư mục
-
-Nếu thư mục salary/ chưa tồn tại, chương trình sẽ tự động tạo thư mục để lưu các phiếu lương.
-
-5. Logging
-
-Chương trình tạo file process_log.txt để ghi lại quá trình xử lý.
-
-Log bao gồm:
-
-Nhân viên xử lý thành công.
-Nhân viên xử lý thất bại.
-Nguyên nhân lỗi.
-Thời gian xử lý.
-Công nghệ sử dụng
-Công nghệ	Mục đích
-Python	Ngôn ngữ lập trình chính
-Pandas	Đọc và xử lý dữ liệu Excel
-OpenPyXL	Đọc file .xlsx
-WeasyPrint	Chuyển HTML/CSS thành PDF
-HTML	Xây dựng nội dung phiếu lương
-CSS	Thiết kế giao diện phiếu lương
-Cấu trúc Project
-PDF-Automation-/
+Features
+Read employee salary data from Excel using Pandas
+Validate input data before processing
+Calculate salary based on working days
+Calculate insurance deductions and personal income tax
+Generate dynamic HTML/CSS salary slips
+Export each employee salary slip as a PDF
+Automatically create the salary/ output folder
+Generate process_log.txt
+Skip invalid employee records without stopping the entire process
+Record successful and failed processing results
+Technologies
+Python
+Pandas
+OpenPyXL
+WeasyPrint
+HTML
+CSS
+Project Structure
+PDF-Automation/
 │
-├── salary_report.py
 ├── employees.xlsx
+├── salary_report.py
 ├── README.md
 ├── process_log.txt
 │
 └── salary/
     ├── NV001.pdf
     ├── NV002.pdf
-    └── ...
+    └── NV003.pdf
+Requirements
 
-Trong đó:
+Recommended environment:
 
-salary_report.py: chương trình chính.
-employees.xlsx: dữ liệu đầu vào.
-salary/: thư mục chứa các phiếu lương PDF.
-process_log.txt: file ghi log.
-README.md: tài liệu mô tả project.
-Quy trình hoạt động
-employees.xlsx
-      ↓
-Đọc dữ liệu bằng Pandas
-      ↓
-Kiểm tra dữ liệu
-      ↓
-Xử lý từng nhân viên
-      ↓
-Tính toán tiền lương
-      ↓
-Tạo HTML + CSS
-      ↓
-Chuyển HTML → PDF
-      ↓
-Lưu vào thư mục salary/
-      ↓
-Ghi process_log.txt
-Mô hình tính lương
-Ngày công
+Python 3.12
 
-Hệ thống phân biệt giữa:
-
-Ngày công chuẩn.
-Ngày công thực tế.
-Ngày nghỉ phép hưởng lương.
-Ngày nghỉ không lương.
-
-Ngày công tính lương được xác định theo:
-
-Ngày công tính lương = Ngày công thực tế + Ngày nghỉ phép hưởng lương
-
-Ví dụ:
-
-Ngày công chuẩn: 26 ngày
-Ngày công thực tế: 25 ngày
-Ngày nghỉ phép hưởng lương: 1 ngày
-
-Khi đó:
-
-Ngày công tính lương = 25 + 1 = 26 ngày
-
-Nhân viên được tính đủ lương theo 26 ngày công.
-
-Trong trường hợp nhân viên đi làm 25 ngày và không có ngày nghỉ phép hưởng lương:
-
-Ngày công tính lương = 25 ngày
-
-Tiền lương được tính theo tỷ lệ 25/26 ngày.
-
-Tính lương theo ngày công
-
-Lương thực tế = Lương cơ bản / Ngày công chuẩn × Ngày công tính lương
-
-Các khoản khấu trừ
-
-Hệ thống có thể tính các khoản:
-
-BHXH
-BHYT
-BHTN
-Thuế TNCN
-Các khoản phạt hoặc khấu trừ khác nếu có
-Cài đặt
-
-Cài đặt các thư viện cần thiết:
+Install the required packages:
 
 pip install pandas openpyxl weasyprint
+Input Data
 
-Kiểm tra phiên bản Python:
+The program reads employee information from:
 
-python --version
+employees.xlsx
 
-Kiểm tra các thư viện:
+The Excel file contains employee-related information such as:
 
-pip show pandas
-pip show openpyxl
-pip show weasyprint
+Column	Description
+Mã NV	Employee ID
+Tên NV	Employee name
+Chức vụ	Position
+Lương cơ bản	Basic salary
+Lương đóng BHXH	Salary used for social insurance
+Ngày công chuẩn	Standard working days
+Ngày công đi làm	Actual working days
+Thưởng	Bonus
+Phụ cấp	Allowance
+Số người phụ thuộc	Number of dependents
+Phạt	Penalty
+Salary Calculation
 
-Lưu ý: Trên Windows, WeasyPrint có thể yêu cầu thêm thư viện GTK/MSYS2 để hoạt động.
+The system calculates salary based on the employee's actual working days.
 
-Hướng dẫn sử dụng
-Bước 1: Chuẩn bị file Excel
+Lương ngày
+    │
+    ▼
+Lương cơ bản / Ngày công chuẩn
+    │
+    ▼
+Lương theo ngày công
+    │
+    ├── Thưởng
+    ├── Phụ cấp
+    │
+    ▼
+Tổng thu nhập
+    │
+    ├── BHXH
+    ├── BHYT
+    ├── BHTN
+    ├── Thuế TNCN
+    └── Phạt
+    │
+    ▼
+Thực lĩnh
 
-Đặt file employees.xlsx vào cùng thư mục với salary_report.py.
+For example:
 
-Bước 2: Kiểm tra dữ liệu
+Lương thực tế =
+Lương cơ bản / Ngày công chuẩn × Ngày công tính lương
 
-Đảm bảo các cột trong Excel được đặt đúng tên và dữ liệu có định dạng phù hợp.
+The system distinguishes between actual working days and paid leave when calculating the final salary.
 
-Bước 3: Chạy chương trình
-python salary_report.py
-Bước 4: Kiểm tra kết quả
+Generate PDF
 
-Sau khi chương trình chạy xong, các phiếu lương sẽ được lưu trong thư mục salary/.
+After processing valid employee records, the system automatically generates PDF salary slips.
+
+Output directory:
+
+salary/
+
+Each PDF is named using the employee ID:
+
+[Mã NV].pdf
+
+Example:
 
 salary/
 ├── NV001.pdf
 ├── NV002.pdf
 └── NV003.pdf
+PDF Salary Slip
 
-File process_log.txt cũng được tạo để theo dõi quá trình xử lý.
+Each generated PDF contains information such as:
 
-Dữ liệu đầu vào
+Company information
+Employee information
+Salary month
+Basic salary
+Working days
+Bonus
+Allowance
+Social insurance
+Health insurance
+Unemployment insurance
+Personal income tax
+Penalty
+Net salary
+Salary amount in words
+Logging
 
-File employees.xlsx sử dụng cấu trúc dữ liệu tương tự:
+The system automatically creates:
 
-Mã NV	Tên NV	Chức vụ	Lương cơ bản	Ngày công chuẩn	Ngày công đi làm	Thưởng	Phụ cấp
-NV001	Nguyễn Văn A	Nhân viên	10000000	26	26	1000000	500000
-NV002	Trần Văn B	Nhân viên	12000000	26	25	500000	300000
+process_log.txt
 
-Có thể bổ sung thêm các trường dữ liệu phục vụ cho việc tính lương.
+The log records:
 
-Kết quả đầu ra
-Phiếu lương PDF
+Successfully generated salary slips
+Failed records
+Invalid input data
+Reasons for processing failures
 
-Mỗi nhân viên có một file PDF riêng.
+Example:
 
-Phiếu lương bao gồm:
+[2026-09-18 08:30:12] SUCCESS - NV001 - PDF generated successfully
+[2026-09-18 08:30:13] SUCCESS - NV002 - PDF generated successfully
+[2026-09-18 08:30:13] ERROR - Row 5 - Invalid salary value
+Error Handling
 
-Thông tin công ty.
-Thông tin nhân viên.
-Tháng tính lương.
-Ngày công.
-Các khoản thu nhập.
-Các khoản khấu trừ.
-Thuế TNCN.
-Số tiền thực lĩnh.
-Số tiền bằng chữ.
-Khu vực ký xác nhận.
-File Log
+The program uses try...except to prevent one invalid employee record from stopping the entire process.
 
-File process_log.txt ghi lại kết quả xử lý.
+Read Excel
+    │
+    ▼
+Validate employee data
+    │
+    ├── Invalid ──► Log error ──► Skip row
+    │
+    ▼
+Calculate salary
+    │
+    ▼
+Generate PDF
+    │
+    ▼
+Save PDF
+    │
+    ▼
+Write success log
+Run the Program
 
-Ví dụ:
+Place the following files in the same project directory:
 
-[2026-09-01 10:30:15] SUCCESS - NV001 - Nguyen Van A - NV001.pdf
-[2026-09-01 10:30:16] SUCCESS - NV002 - Tran Van B - NV002.pdf
-[2026-09-01 10:30:17] FAILED - NV003 - Invalid salary data
-Xử lý lỗi
+PDF-Automation/
+├── employees.xlsx
+└── salary_report.py
 
-Chương trình sử dụng try...except để xử lý lỗi trong quá trình chạy.
+Run:
 
-Một số trường hợp được xử lý:
+python salary_report.py
 
-File Excel không tồn tại.
-Thiếu cột bắt buộc.
-Lương không phải dữ liệu số.
-Ngày công không hợp lệ.
-Dữ liệu nhân viên bị thiếu.
-Không thể tạo file PDF.
-Lỗi trong quá trình xử lý từng nhân viên.
+After execution, the generated salary slips will be stored in:
 
-Khi một nhân viên có dữ liệu không hợp lệ, chương trình sẽ ghi nhận lỗi vào process_log.txt và tiếp tục xử lý các nhân viên còn lại.
+salary/
 
-Ưu điểm
-Tự động hóa quy trình tạo phiếu lương.
-Giảm thao tác thủ công.
-Có thể xử lý nhiều nhân viên.
-Tạo PDF riêng cho từng nhân viên.
-Có cơ chế xử lý lỗi.
-Có hệ thống logging.
-Có thể mở rộng công thức tính lương.
-Có thể tái sử dụng cho nhiều loại báo cáo PDF khác.
-Hạn chế và hướng phát triển
-Hạn chế
-Chưa có giao diện người dùng.
-Một số thông số tính lương được thiết lập trong chương trình.
-Chưa kết nối trực tiếp với hệ thống quản lý nhân sự.
-Công thức thuế và bảo hiểm cần được cập nhật khi quy định thay đổi.
-Hướng phát triển
-Xây dựng giao diện bằng Tkinter hoặc PyQt.
-Cho phép người dùng chọn file Excel.
-Cho phép lựa chọn thư mục xuất PDF.
-Xuất báo cáo tổng hợp.
-Gửi phiếu lương qua email.
-Kết nối cơ sở dữ liệu.
-Xây dựng dashboard thống kê.
-Cho phép cấu hình công thức tính lương từ giao diện.
-Thành viên nhóm
-STT	Họ và tên	Vai trò
-1	Thành viên 1	Phát triển hệ thống
-2	Thành viên 2	Xử lý dữ liệu
-3	Thành viên 3	Kiểm thử
-4	Thành viên 4	Báo cáo và thuyết trình
+and the processing log will be stored in:
 
-Thay thông tin thành viên bằng thông tin thực tế của nhóm.
+process_log.txt
+Project Workflow
 
-Kết luận
+The complete automation workflow is:
 
-Đề tài xây dựng hệ thống tự động tạo báo cáo PDF từ dữ liệu Excel bằng Python.
+employees.xlsx
+       │
+       ▼
+Read Excel Data
+       │
+       ▼
+Validate Data
+       │
+       ▼
+Calculate Salary
+       │
+       ▼
+Generate HTML/CSS
+       │
+       ▼
+Convert HTML to PDF
+       │
+       ▼
+Save [Mã NV].pdf
+       │
+       ▼
+Write process_log.txt
+Project Status
 
-Thông qua project, nhóm áp dụng các kiến thức về:
+Current version:
 
-Python.
-Xử lý dữ liệu.
-Đọc và xử lý Excel.
-Exception Handling.
-HTML/CSS.
-Tự động hóa.
-Tạo báo cáo PDF.
-Logging.
+V1.0 — Automated Employee Salary PDF Generation
 
-Hệ thống giúp giảm các thao tác thủ công trong quá trình tạo phiếu lương và có khả năng mở rộng thành một hệ thống báo cáo tự động hoàn chỉnh.
-
-Project Information
-Thông tin	Nội dung
-Project	Automated PDF Salary Report Generation
-Language	Python
-Input	Excel (.xlsx)
-Output	PDF (.pdf)
-Template	HTML/CSS
+The project currently focuses on automatically generating employee salary-slip PDFs from structured Excel data.
