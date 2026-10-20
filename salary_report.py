@@ -26,6 +26,9 @@ import html
 import logging
 from pathlib import Path
 from datetime import datetime
+from decimal import Decimal, ROUND_HALF_UP
+import math
+import re
 
 # ------------------------------------------------------------
 # 1. Cấu hình DLL cho WeasyPrint trên Windows
@@ -68,9 +71,7 @@ COMPANY_ADDRESS = (
     "Thành phố Hồ Chí Minh, Việt Nam"
 )
 
-from datetime import datetime
-
-PAY_MONTH = datetime.now().strftime("%m/%Y")
+PAY_MONTH = os.environ.get("PAY_MONTH", datetime.now().strftime("%m/%Y"))
 
 # ------------------------------------------------------------
 # 5. Logging
@@ -111,19 +112,24 @@ DEPENDENT_DEDUCTION = 6_200_000
 # 7. Hàm format tiền
 # ------------------------------------------------------------
 
+def round_money(value):
+    """Làm tròn tiền đến đồng theo quy tắc half-up."""
+
+    number = Decimal(str(value))
+
+    if not number.is_finite():
+        raise ValueError("Giá trị tiền phải là số hữu hạn")
+
+    return number.quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+
+
 def format_money(value):
     """Đổi số thành dạng 15.000.000 VNĐ."""
 
     try:
-        number = float(value)
-
-        return (
-            f"{number:,.0f}"
-            .replace(",", ".")
-            + " VNĐ"
-        )
-
-    except Exception:
+        number = round_money(value)
+        return f"{number:,.0f}".replace(",", ".") + " VNĐ"
+    except (ValueError, TypeError, ArithmeticError):
         return "—"
 
 
@@ -150,48 +156,56 @@ def get_value(row, column, default=None):
 # ------------------------------------------------------------
 
 def parse_number(value, field_name):
-    """
-    Chuyển dữ liệu thành số.
-    Cho phép:
-        15000000
-        "15,000,000"
-        "15.000.000"
-    """
+    """Chuẩn hóa số nhập từ Excel, chấp nhận dấu phân cách hàng nghìn và thập phân."""
 
     if value is None or pd.isna(value):
-        raise ValueError(
-            f"{field_name} đang bị bỏ trống"
-        )
+        raise ValueError(f"{field_name} đang bị bỏ trống")
 
     if isinstance(value, str):
-        value = value.strip()
-
-        if not value:
-            raise ValueError(
-                f"{field_name} đang bị bỏ trống"
-            )
-
-        value = (
-            value
-            .replace(",", "")
-            .replace(".", "")
+        normalized = (
+            value.strip()
+            .replace("\u00a0", "")
             .replace(" ", "")
             .replace("VNĐ", "")
-            .strip()
+            .replace("vnđ", "")
+            .replace("VND", "")
+            .replace("vnd", "")
         )
+
+        if not normalized:
+            raise ValueError(f"{field_name} đang bị bỏ trống")
+
+        has_dot = "." in normalized
+        has_comma = "," in normalized
+
+        if has_dot and has_comma:
+            if normalized.rfind(",") > normalized.rfind("."):
+                normalized = normalized.replace(".", "").replace(",", ".")
+            else:
+                normalized = normalized.replace(",", "")
+        elif has_dot or has_comma:
+            separator = "," if has_comma else "."
+            if normalized.count(separator) > 1:
+                normalized = normalized.replace(separator, "")
+            else:
+                left, right = normalized.split(separator)
+                if len(right) == 3 and left.lstrip("+-").isdigit():
+                    normalized = left + right
+                else:
+                    normalized = left + "." + right
+
+        value = normalized
 
     try:
-        number = float(value)
+        number = Decimal(str(value))
+    except Exception as error:
+        raise ValueError(f"{field_name} không phải số hợp lệ: {value}") from error
 
-    except Exception:
-        raise ValueError(
-            f"{field_name} không phải số: {value}"
-        )
+    if not number.is_finite():
+        raise ValueError(f"{field_name} phải là số hữu hạn")
 
     if number < 0:
-        raise ValueError(
-            f"{field_name} không được âm"
-        )
+        raise ValueError(f"{field_name} không được âm")
 
     return number
 
@@ -279,7 +293,7 @@ def number_to_vietnamese(number):
     """Chuyển số tiền thành chữ tiếng Việt."""
 
     try:
-        number = int(round(float(number)))
+        number = int(round_money(number))
     except Exception:
         return "Không xác định"
 
@@ -332,40 +346,35 @@ def number_to_vietnamese(number):
 # ------------------------------------------------------------
 
 def calculate_pit(taxable_income):
-    """Tính thuế TNCN lũy tiến 7 bậc."""
+    """Tính thuế TNCN lũy tiến 5 bậc theo mô hình áp dụng cho kỳ tính thuế 2026."""
 
-    x = max(float(taxable_income), 0)
+    x = max(Decimal(str(taxable_income)), Decimal("0"))
+    if not x.is_finite():
+        raise ValueError("Thu nhập tính thuế phải là số hữu hạn")
 
     brackets = [
-        (5_000_000, 0.05),
-        (10_000_000, 0.10),
-        (18_000_000, 0.15),
-        (32_000_000, 0.20),
-        (52_000_000, 0.25),
-        (80_000_000, 0.30),
-        (float("inf"), 0.35),
+        (Decimal("10000000"), Decimal("0.05")),
+        (Decimal("30000000"), Decimal("0.10")),
+        (Decimal("60000000"), Decimal("0.20")),
+        (Decimal("100000000"), Decimal("0.30")),
+        (Decimal("Infinity"), Decimal("0.35")),
     ]
 
-    tax = 0
-    previous = 0
+    tax = Decimal("0")
+    previous = Decimal("0")
 
     for upper, rate in brackets:
         if x <= previous:
             break
 
-        taxable_part = min(
-            x,
-            upper
-        ) - previous
-
+        taxable_part = min(x, upper) - previous
         tax += taxable_part * rate
-
         previous = upper
 
         if x <= upper:
             break
 
-    return round(tax)
+    return round_money(tax)
 
 
 # ------------------------------------------------------------
@@ -434,6 +443,9 @@ def calculate_salary_fallback(row):
         "Phạt"
     )
 
+    if dependents != dependents.to_integral_value():
+        raise ValueError("Số người phụ thuộc phải là số nguyên không âm")
+
     if standard_days <= 0:
         raise ValueError(
             "Ngày công chuẩn phải lớn hơn 0"
@@ -449,7 +461,7 @@ def calculate_salary_fallback(row):
         basic / standard_days
     )
 
-    actual_salary = round(
+    actual_salary = round_money(
         daily_salary * actual_days
     )
 
@@ -459,17 +471,9 @@ def calculate_salary_fallback(row):
         + allowance
     )
 
-    bhxh = round(
-        insurance_salary * BHXH_RATE
-    )
-
-    bhyt = round(
-        insurance_salary * BHYT_RATE
-    )
-
-    bhtn = round(
-        insurance_salary * BHTN_RATE
-    )
+    bhxh = round_money(insurance_salary * Decimal(str(BHXH_RATE)))
+    bhyt = round_money(insurance_salary * Decimal(str(BHYT_RATE)))
+    bhtn = round_money(insurance_salary * Decimal(str(BHTN_RATE)))
 
     taxable_income = max(
         0,
@@ -514,6 +518,7 @@ def calculate_salary_fallback(row):
         "Ngày công đi làm": actual_days,
         "Thưởng": bonus,
         "Phụ cấp": allowance,
+        "Số người phụ thuộc": int(dependents),
         "Phạt": penalty,
     }
 
@@ -575,9 +580,9 @@ def create_salary_html(employee):
 
     net_salary = employee["Thực lãnh"]
 
-    dependents = employee[
-        "Số người phụ thuộc"
-    ]
+    dependents = html.escape(
+        str(employee["Số người phụ thuộc"])
+    )
 
     amount_in_word = number_to_vietnamese(
         net_salary
@@ -914,6 +919,9 @@ body {{
 # ------------------------------------------------------------
 
 def validate_columns(df):
+    if df.empty:
+        raise ValueError("Tệp Excel không có bản ghi nhân viên")
+
     required = [
         "Mã NV",
         "Tên NV",
@@ -923,16 +931,24 @@ def validate_columns(df):
         "Phạt",
     ]
 
-    missing = [
-        column
-        for column in required
-        if column not in df.columns
-    ]
+    missing = [column for column in required if column not in df.columns]
 
     if missing:
+        raise ValueError("Thiếu cột bắt buộc: " + ", ".join(missing))
+
+
+def validate_employee_ids(df):
+    """Không cho phép mã NV trùng vì tên PDF được tạo theo mã NV."""
+
+    ids = df["Mã NV"].fillna("").astype(str).str.strip()
+    ids = ids[ids != ""]
+    duplicates = ids[ids.duplicated(keep=False)]
+
+    if not duplicates.empty:
+        duplicated_ids = sorted(set(duplicates.tolist()))
         raise ValueError(
-            "Thiếu cột bắt buộc: "
-            + ", ".join(missing)
+            "Mã NV bị trùng, có thể làm ghi đè phiếu lương: "
+            + ", ".join(duplicated_ids)
         )
 
 
@@ -948,8 +964,12 @@ def process_employee(row, excel_row_number):
     ).strip()
 
     if not employee_id:
+        raise ValueError("Mã NV bị bỏ trống")
+
+    if not re.fullmatch(r"[A-Za-z0-9_-]{1,64}", employee_id):
         raise ValueError(
-            "Mã NV bị bỏ trống"
+            "Mã NV chỉ được chứa chữ cái không dấu, số, dấu gạch ngang "
+            "hoặc gạch dưới (tối đa 64 ký tự)"
         )
 
     employee_name = str(
@@ -1065,49 +1085,15 @@ def process_employee(row, excel_row_number):
     for key, value in fallback.items():
         employee[key] = value
 
-    # --------------------------------------------------------
-    # Nếu Excel có kết quả công thức hợp lệ thì dùng nó.
-    # --------------------------------------------------------
-
-    formula_columns = [
-        "Lương theo ngày",
-        "Lương thực tế",
-        "Tổng thu nhập",
-        "BHXH",
-        "BHYT",
-        "BHTN",
-        "Thu nhập tính thuế",
-        "Thuế TNCN",
-        "Tổng khấu trừ",
-        "Thực lãnh",
-    ]
-
-    for column in formula_columns:
-
-        excel_value = get_value(
-            row,
-            column,
-            None
-        )
-
-        if excel_value is None:
-            continue
-
-        try:
-            number = float(excel_value)
-
-            if number >= 0:
-                employee[column] = number
-
-        except Exception:
-            pass
+    # Python là nguồn tính toán duy nhất để tránh trộn kết quả
+    # cached từ Excel với các giá trị dự phòng và gây lệch tổng.
 
     # --------------------------------------------------------
     # Kiểm tra thực lãnh cuối cùng
     # --------------------------------------------------------
 
-    employee["Thực lãnh"] = round(
-        float(employee["Thực lãnh"])
+    employee["Thực lãnh"] = round_money(
+        employee["Thực lãnh"]
     )
 
     if employee["Thực lãnh"] < 0:
@@ -1132,26 +1118,25 @@ def process_employee(row, excel_row_number):
         / f"{employee_id}.pdf"
     )
 
-    HTML(
-        string=html_content,
-        base_url=str(BASE_DIR)
-    ).write_pdf(
-        str(pdf_path)
-    )
+    temporary_pdf = pdf_path.with_name(f".{employee_id}.tmp.pdf")
 
-    # --------------------------------------------------------
-    # Kiểm tra file
-    # --------------------------------------------------------
+    try:
+        HTML(
+            string=html_content,
+            base_url=str(BASE_DIR)
+        ).write_pdf(str(temporary_pdf))
 
-    if not pdf_path.exists():
-        raise RuntimeError(
-            "Không tạo được file PDF"
-        )
+        if not temporary_pdf.is_file() or temporary_pdf.stat().st_size == 0:
+            raise RuntimeError("Không tạo được file PDF hợp lệ")
 
-    if pdf_path.stat().st_size == 0:
-        raise RuntimeError(
-            "File PDF có kích thước 0 byte"
-        )
+        with temporary_pdf.open("rb") as pdf_file:
+            if not pdf_file.read(5).startswith(b"%PDF-"):
+                raise RuntimeError("Tệp đầu ra không có chữ ký PDF hợp lệ")
+
+        temporary_pdf.replace(pdf_path)
+    finally:
+        if temporary_pdf.exists():
+            temporary_pdf.unlink()
 
     return pdf_path
 
@@ -1238,7 +1223,9 @@ def main():
 
     try:
 
+        df.columns = [str(column).strip() for column in df.columns]
         validate_columns(df)
+        validate_employee_ids(df)
 
     except Exception as error:
 
