@@ -1165,6 +1165,17 @@ def main():
     logging.info("=" * 65)
     logging.info("BẮT ĐẦU CHƯƠNG TRÌNH")
 
+    try:
+        from weasyprint import HTML
+    except Exception as error:
+        message = (
+            "Không thể khởi tạo WeasyPrint. Hãy kiểm tra cài đặt "
+            "gói Python và thư viện hệ thống cần thiết trên Windows."
+        )
+        print(f"LỖI: {message}")
+        logging.exception("%s Chi tiết: %s", message, error)
+        return
+
     # --------------------------------------------------------
     # Kiểm tra Excel
     # --------------------------------------------------------
