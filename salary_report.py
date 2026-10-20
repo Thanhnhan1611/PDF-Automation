@@ -1065,15 +1065,11 @@ def process_employee(row, excel_row_number):
         )
 
     # --------------------------------------------------------
-    # Tính dự phòng.
-    #
-    # Nếu Excel đã có kết quả công thức thì ưu tiên kết quả
-    # từ Excel. Nếu cached value chưa có thì dùng kết quả này.
+    # Tính tất cả trường dẫn xuất bằng cùng một bộ công thức.
+    # Không trộn kết quả cached trong Excel với kết quả Python.
     # --------------------------------------------------------
 
-    fallback = calculate_salary(
-        row
-    )
+    salary_result = calculate_salary(row)
 
     employee = row.copy()
 
@@ -1081,7 +1077,7 @@ def process_employee(row, excel_row_number):
     employee["Tên NV"] = employee_name
     employee["Chức vụ"] = position
 
-    for key, value in fallback.items():
+    for key, value in salary_result.items():
         employee[key] = value
 
     # Python là nguồn tính toán duy nhất để tránh trộn kết quả
@@ -1200,13 +1196,9 @@ def main():
         return
 
     # --------------------------------------------------------
-    # Đọc Excel bằng Pandas
-    #
-    # data_only=False:
-    # đọc được công thức, nhưng không phù hợp để lấy kết quả.
-    #
-    # Pandas/openpyxl sẽ lấy cached value nếu WPS/Excel đã
-    # tính và lưu file.
+    # Đọc Excel bằng Pandas.
+    # Chỉ dùng dữ liệu đầu vào; các cột kết quả tính sẵn trong
+    # bảng tính không được dùng để ghi đè kết quả tính bằng Python.
     # --------------------------------------------------------
 
     try:
