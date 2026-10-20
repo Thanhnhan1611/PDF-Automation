@@ -6,8 +6,7 @@
 # employees.xlsx
 #     -> Pandas đọc Excel
 #     -> kiểm tra dữ liệu từng dòng
-#     -> lấy kết quả công thức Excel
-#     -> nếu WPS chưa lưu kết quả công thức thì tính dự phòng
+#     -> Python tính toán theo một nguồn công thức thống nhất
 #     -> HTML/CSS
 #     -> WeasyPrint
 #     -> salary/NVxxx.pdf
@@ -45,7 +44,6 @@ if sys.platform.startswith("win"):
 # ------------------------------------------------------------
 
 import pandas as pd
-from weasyprint import HTML
 
 
 # ------------------------------------------------------------
@@ -57,7 +55,7 @@ EXCEL_FILE = BASE_DIR / "employees.xlsx"
 OUTPUT_DIR = BASE_DIR / "salary"
 LOG_FILE = BASE_DIR / "process_log.txt"
 
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+# Thư mục đầu ra được tạo khi main() bắt đầu, không tạo khi import module.
 
 
 # ------------------------------------------------------------
@@ -77,12 +75,16 @@ PAY_MONTH = os.environ.get("PAY_MONTH", datetime.now().strftime("%m/%Y"))
 # 5. Logging
 # ------------------------------------------------------------
 
-logging.basicConfig(
-    filename=LOG_FILE,
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(message)s",
-    encoding="utf-8",
-)
+def configure_logging():
+    """Cấu hình nhật ký khi chạy chương trình, không gây tác dụng phụ lúc import."""
+
+    logging.basicConfig(
+        filename=LOG_FILE,
+        level=logging.INFO,
+        format="%(asctime)s | %(levelname)s | %(message)s",
+        encoding="utf-8",
+        force=True,
+    )
 
 
 # ------------------------------------------------------------
@@ -336,21 +338,21 @@ def number_to_vietnamese(number):
 
 
 # ------------------------------------------------------------
-# 11. Tính thuế TNCN dạng lũy tiến 7 bậc
+# 11. Tính thuế TNCN lũy tiến theo kỳ tính thuế năm 2026
 # ------------------------------------------------------------
-# Đây là hàm dự phòng để PDF vẫn chạy nếu WPS/Excel chưa
-# lưu cached value của công thức.
-#
-# Nếu bạn muốn dùng một biểu thuế khác cho đề tài, chỉ cần
-# sửa hàm này và phần công thức Excel tương ứng.
+# Python là nguồn tính toán duy nhất để tránh phụ thuộc vào cached
+# formula có thể cũ hoặc không nhất quán trong tệp Excel.
+# Các quy tắc trong chương trình là mô hình học tập, cần được
+# đối chiếu với quy định áp dụng trước khi dùng trong thực tế.
 # ------------------------------------------------------------
 
 def calculate_pit(taxable_income):
     """Tính thuế TNCN lũy tiến 5 bậc theo mô hình áp dụng cho kỳ tính thuế 2026."""
 
-    x = max(Decimal(str(taxable_income)), Decimal("0"))
+    x = Decimal(str(taxable_income))
     if not x.is_finite():
         raise ValueError("Thu nhập tính thuế phải là số hữu hạn")
+    x = max(x, Decimal("0"))
 
     brackets = [
         (Decimal("10000000"), Decimal("0.05")),
@@ -378,12 +380,10 @@ def calculate_pit(taxable_income):
 
 
 # ------------------------------------------------------------
-# 12. Tính lương dự phòng
+# 12. Tính lương từ dữ liệu đầu vào
 # ------------------------------------------------------------
-# Quan trọng:
-#
-# Excel vẫn là nơi có công thức.
-# Hàm này chỉ dùng khi WPS/Excel chưa lưu kết quả công thức.
+# Các giá trị đầu vào lấy từ Excel; các khoản tính toán được
+# xác định trong Python để giữ một nguồn công thức thống nhất.
 # ------------------------------------------------------------
 
 def calculate_salary_fallback(row):
@@ -1121,6 +1121,8 @@ def process_employee(row, excel_row_number):
     temporary_pdf = pdf_path.with_name(f".{employee_id}.tmp.pdf")
 
     try:
+        from weasyprint import HTML
+
         HTML(
             string=html_content,
             base_url=str(BASE_DIR)
@@ -1146,6 +1148,14 @@ def process_employee(row, excel_row_number):
 # ------------------------------------------------------------
 
 def main():
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    configure_logging()
+
+    if not re.fullmatch(r"(0[1-9]|1[0-2])/\d{4}", PAY_MONTH):
+        message = "PAY_MONTH phải có định dạng MM/YYYY, ví dụ 09/2026"
+        print(f"LỖI: {message}")
+        logging.error(message)
+        return
 
     print()
     print("=" * 65)
