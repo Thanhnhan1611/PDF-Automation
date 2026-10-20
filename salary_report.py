@@ -26,7 +26,6 @@ import logging
 from pathlib import Path
 from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
-import math
 import re
 
 # ------------------------------------------------------------
@@ -386,7 +385,7 @@ def calculate_pit(taxable_income):
 # xác định trong Python để giữ một nguồn công thức thống nhất.
 # ------------------------------------------------------------
 
-def calculate_salary_fallback(row):
+def calculate_salary(row):
     basic = parse_number(
         row["Lương cơ bản"],
         "Lương cơ bản"
@@ -1072,7 +1071,7 @@ def process_employee(row, excel_row_number):
     # từ Excel. Nếu cached value chưa có thì dùng kết quả này.
     # --------------------------------------------------------
 
-    fallback = calculate_salary_fallback(
+    fallback = calculate_salary(
         row
     )
 
