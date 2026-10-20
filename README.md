@@ -92,7 +92,7 @@ Thực lãnh = Tổng thu nhập - Tổng khấu trừ
 
 ### Mô hình thuế TNCN năm 2026
 
-Hàm dự phòng được cập nhật theo biểu thuế lũy tiến 5 bậc cho thu nhập tính thuế tháng:
+Mô hình tính thuế trong chương trình sử dụng biểu thuế lũy tiến 5 bậc cho thu nhập tính thuế tháng:
 
 | Phần thu nhập tính thuế tháng | Thuế suất |
 |---|---:|
@@ -187,16 +187,26 @@ Các kiểm thử hiện bao gồm định dạng số, giá trị không hợp 
 - Bảo vệ thư mục chứa PDF và chỉ chia sẻ phiếu lương cho người có thẩm quyền.
 - Nếu `employees.xlsx` hiện tại chứa dữ liệu thật, hãy thay bằng dữ liệu giả lập và loại bỏ bản ghi nhạy cảm khỏi lịch sử Git trước khi tiếp tục dùng repository công khai.
 
+## Phân chia trách nhiệm
+
+- `salary_report.py`: điều phối chương trình, đọc Excel, kiểm tra cấu trúc/mã nhân viên, kết xuất PDF và ghi nhật ký.
+- `salary_calculator.py`: chuẩn hóa giá trị số, tính các thành phần lương, tính thuế theo mô hình được cấu hình và chuyển số thành chữ.
+- `templates/salary_template.html`: mẫu HTML/CSS độc lập với logic tính toán.
+- `tests/test_salary_report.py`: kiểm thử các phép tính, xác thực dữ liệu và luồng ghi PDF với bộ kết xuất giả lập.
+
 ## Cấu trúc chính
 
 ```text
 PDF-Automation/
 ├── salary_report.py
+├── salary_calculator.py
 ├── employees.xlsx
 ├── README.md
 ├── requirements.txt
 ├── requirements-dev.txt
 ├── .gitignore
+├── templates/
+│   └── salary_template.html
 ├── tests/
 │   └── test_salary_report.py
 └── .github/
