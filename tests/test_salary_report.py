@@ -106,6 +106,23 @@ def test_empty_input_is_rejected():
         app.validate_columns(pd.DataFrame())
 
 
+def test_employee_id_cannot_be_used_as_a_path():
+    with pytest.raises(ValueError, match="Mã NV chỉ được chứa"):
+        app.process_employee(make_row(**{"Mã NV": "../outside"}), excel_row_number=2)
+
+
+def test_html_escapes_employee_text_fields():
+    row = make_row(**{"Tên NV": "<script>alert(1)</script>", "Chức vụ": "R&D <manager>"})
+    employee = row.to_dict()
+    employee.update(app.calculate_salary(row))
+
+    rendered = app.create_salary_html(employee)
+
+    assert "<script>alert(1)</script>" not in rendered
+    assert "&lt;script&gt;alert(1)&lt;/script&gt;" in rendered
+    assert "R&amp;D &lt;manager&gt;" in rendered
+
+
 def test_pdf_is_written_atomically_and_missing_dependents_column_is_supported(
     tmp_path, monkeypatch
 ):
