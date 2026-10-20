@@ -1,339 +1,215 @@
-# Tự động tạo phiếu lương PDF
+# PDF Automation — Tự động tạo phiếu lương PDF
 
-Python automation system for reading employee salary data from Excel, calculating salary information, generating employee salary slips as PDF files, and recording the processing results in a log file.
+Ứng dụng Python đọc dữ liệu nhân viên từ Excel, kiểm tra đầu vào, tính các khoản lương theo quy tắc được cấu hình, tạo phiếu lương PDF riêng cho từng nhân viên và ghi nhật ký xử lý.
 
-## Giới thiệu
+> **Phạm vi sử dụng:** Đây là đồ án học tập và công cụ tự động hóa tài liệu, không phải phần mềm kế toán hoặc quyết toán thuế đã được chứng nhận. Trước khi dùng cho bảng lương thật, phải xác minh các quy tắc thuế, bảo hiểm và chính sách của doanh nghiệp.
 
-Đây là bài tập A3 với đề tài **Tự động tạo báo cáo PDF**, trong đó hệ thống được xây dựng để tự động tạo **phiếu lương cho nhân viên** từ dữ liệu trong file Excel.
+## Chức năng
 
-Thay vì tạo từng phiếu lương thủ công, chương trình thực hiện toàn bộ quy trình:
+- Đọc tệp `employees.xlsx`.
+- Kiểm tra các cột bắt buộc, dữ liệu số, ngày công và mã nhân viên trùng.
+- Chuẩn hóa giá trị số có dấu phân cách hàng nghìn hoặc thập phân.
+- Tính lương bằng Python với `Decimal` và quy tắc làm tròn half-up.
+- Tính các khoản BHXH, BHYT, BHTN, thu nhập tính thuế, thuế TNCN, tổng khấu trừ và thực lãnh.
+- Tạo phiếu lương A4 bằng HTML/CSS và WeasyPrint.
+- Ghi nhật ký và tổng kết số dòng thành công/thất bại.
+- Kiểm thử tự động bằng pytest; GitHub Actions chạy kiểm thử khi có push hoặc pull request.
 
-```text
-employees.xlsx
-      │
-      ▼
-Đọc dữ liệu bằng Pandas
-      │
-      ▼
-Kiểm tra dữ liệu
-      │
-      ├── Dữ liệu lỗi ──► Bỏ qua + ghi Log
-      │
-      ▼
-Tính toán tiền lương
-      │
-      ▼
-Tạo HTML/CSS
-      │
-      ▼
-WeasyPrint
-      │
-      ▼
-salary/[Mã NV].pdf
-      │
-      ▼
-process_log.txt
-```
-
-## Mục tiêu
-
-* Tự động hóa quá trình tạo phiếu lương.
-* Đọc dữ liệu nhân viên từ Excel bằng Pandas.
-* Kiểm tra và xử lý dữ liệu không hợp lệ.
-* Tính toán các thành phần của bảng lương.
-* Tạo PDF động dựa trên dữ liệu từng nhân viên.
-* Ghi nhận kết quả xử lý bằng hệ thống logging.
-* Không làm dừng toàn bộ chương trình khi một dòng dữ liệu bị lỗi.
-
-## Chức năng chính
-
-* Đọc file `employees.xlsx`.
-* Kiểm tra các cột bắt buộc.
-* Kiểm tra dữ liệu từng nhân viên.
-* Tính lương theo ngày công.
-* Tính BHXH, BHYT và BHTN.
-* Tính thu nhập tính thuế và thuế TNCN theo mô hình của bài.
-* Tính tổng khấu trừ và thực lãnh.
-* Chuyển số tiền thành chữ tiếng Việt.
-* Tạo phiếu lương bằng HTML/CSS.
-* Chuyển HTML thành PDF bằng WeasyPrint.
-* Tự động tạo thư mục `salary/`.
-* Đặt tên PDF theo mã nhân viên.
-* Ghi kết quả thành công/thất bại vào `process_log.txt`.
-
-## Công nghệ sử dụng
-
-| Công nghệ | Mục đích |
-|---|---|
-| Python | Ngôn ngữ lập trình chính |
-| Pandas | Đọc và xử lý dữ liệu Excel |
-| OpenPyXL | Đọc file `.xlsx` |
-| WeasyPrint | Chuyển HTML/CSS thành PDF |
-| HTML | Xây dựng nội dung phiếu lương |
-| CSS | Định dạng phiếu lương |
-| Logging | Ghi nhật ký quá trình xử lý |
-
-## Cấu trúc project
-
-```text
-PDF-Automation/
-│
-├── employees.xlsx
-├── salary_report.py
-├── README.md
-├── process_log.txt
-│
-└── salary/
-    ├── NV001.pdf
-    ├── NV002.pdf
-    └── NV003.pdf
-```
-
-`salary/` và `process_log.txt` được chương trình tự động tạo trong quá trình chạy.
-
-## Dữ liệu đầu vào
-
-File đầu vào:
+## Luồng xử lý
 
 ```text
 employees.xlsx
+    |
+    v
+Đọc và chuẩn hóa tiêu đề
+    |
+    v
+Kiểm tra cấu trúc và mã nhân viên
+    |
+    v
+Xác thực dữ liệu từng nhân viên
+    |
+    v
+Tính lương trong Python
+    |
+    v
+Tạo HTML/CSS và PDF tạm
+    |
+    v
+Kiểm tra chữ ký PDF -> thay thế file đích
+    |
+    v
+salary/[Mã NV].pdf + process_log.txt
 ```
 
-Các trường chính được sử dụng:
+Python là nguồn tính toán duy nhất. Các cột kết quả công thức có sẵn trong Excel không được dùng để ghi đè từng phần kết quả Python, nhằm tránh trường hợp trộn giá trị cache cũ với giá trị tính lại.
+
+## Cột dữ liệu đầu vào
+
+### Cột bắt buộc
 
 | Cột | Ý nghĩa |
 |---|---|
-| `Mã NV` | Mã nhân viên |
+| `Mã NV` | Mã nhân viên duy nhất; chỉ dùng chữ không dấu, số, dấu gạch ngang và gạch dưới |
 | `Tên NV` | Họ và tên |
 | `Chức vụ` | Chức vụ |
 | `Lương cơ bản` | Mức lương cơ bản |
-| `Lương đóng BHXH` | Mức lương dùng để tính bảo hiểm |
-| `Ngày công chuẩn` | Số ngày công chuẩn trong tháng |
-| `Ngày công đi làm` | Số ngày nhân viên thực tế đi làm |
 | `Thưởng` | Khoản thưởng |
-| `Phụ cấp` | Khoản phụ cấp |
-| `Số người phụ thuộc` | Số người phụ thuộc |
-| `Phạt` | Khoản phạt |
+| `Phạt` | Khoản khấu trừ bổ sung |
 
-Một số trường như `Lương đóng BHXH`, `Ngày công chuẩn`, `Ngày công đi làm`, `Thưởng`, `Phụ cấp` và `Số người phụ thuộc` có giá trị mặc định trong chương trình khi không được cung cấp.
+### Cột tùy chọn
 
-## Mô hình tính lương
+| Cột | Mặc định khi không có hoặc để trống |
+|---|---|
+| `Lương đóng BHXH` | Bằng lương cơ bản |
+| `Ngày công chuẩn` | 26 |
+| `Ngày công đi làm` | Bằng ngày công chuẩn |
+| `Phụ cấp` | 0 |
+| `Số người phụ thuộc` | 0 |
 
-### Lương theo ngày
+Các tiêu đề cần đúng như trên. Mã nhân viên nên được lưu dưới dạng văn bản trong Excel để tránh mất số 0 ở đầu.
 
-```text
-Lương theo ngày =
-Lương cơ bản / Ngày công chuẩn
-```
-
-### Lương thực tế
-
-```text
-Lương thực tế =
-Lương theo ngày × Ngày công đi làm
-```
-
-### Tổng thu nhập
+## Quy tắc tính toán
 
 ```text
-Tổng thu nhập =
-Lương thực tế + Thưởng + Phụ cấp
-```
+Lương theo ngày = Lương cơ bản / Ngày công chuẩn
+Lương thực tế = Lương theo ngày × Ngày công đi làm
+Tổng thu nhập = Lương thực tế + Thưởng + Phụ cấp
 
-### Các khoản bảo hiểm
-
-```text
 BHXH = Lương đóng BHXH × 8%
-
 BHYT = Lương đóng BHXH × 1,5%
-
 BHTN = Lương đóng BHXH × 1%
+
+Thu nhập tính thuế = max(
+    0,
+    Tổng thu nhập - BHXH - BHYT - BHTN
+    - Giảm trừ bản thân - Giảm trừ người phụ thuộc
+)
+
+Tổng khấu trừ = BHXH + BHYT + BHTN + Thuế TNCN + Phạt
+Thực lãnh = Tổng thu nhập - Tổng khấu trừ
 ```
 
-### Thu nhập tính thuế
+### Mô hình thuế TNCN năm 2026
 
-Thu nhập tính thuế được xác định dựa trên tổng thu nhập, các khoản bảo hiểm và mức giảm trừ được cấu hình trong chương trình.
+Mô hình tính thuế trong chương trình sử dụng biểu thuế lũy tiến 5 bậc cho thu nhập tính thuế tháng:
 
-### Thực lãnh
+| Phần thu nhập tính thuế tháng | Thuế suất |
+|---|---:|
+| Đến 10 triệu đồng | 5% |
+| Trên 10 đến 30 triệu đồng | 10% |
+| Trên 30 đến 60 triệu đồng | 20% |
+| Trên 60 đến 100 triệu đồng | 30% |
+| Trên 100 triệu đồng | 35% |
 
-```text
-Thực lãnh =
-Tổng thu nhập - Tổng khấu trừ
-```
+Chương trình sử dụng mức giảm trừ bản thân 15,5 triệu đồng/tháng và người phụ thuộc 6,2 triệu đồng/tháng. Các quy tắc này được dùng cho mô hình theo kỳ tính thuế năm 2026; hãy kiểm tra văn bản chính thức và các trường hợp áp dụng trước khi dùng trong thực tế.
 
-Chương trình cũng kiểm tra dữ liệu ngày công, trong đó `Ngày công đi làm` không được lớn hơn `Ngày công chuẩn`.
+Nguồn tham khảo:
+- [Biểu thuế TNCN lũy tiến từng phần — Cổng thông tin Chính phủ](https://xaydungchinhsach.chinhphu.vn/chi-tiet-bieu-thue-thu-nhap-ca-nhan-luy-tien-tung-phan-119260327091407544.htm)
+- [Quy định giảm trừ gia cảnh — Cổng thông tin Chính phủ](https://xaydungchinhsach.chinhphu.vn/quy-dinh-giam-tru-gia-canh-119260703144038062.htm)
 
-## Tạo phiếu lương PDF
+## Kết quả đầu ra
 
-Mỗi nhân viên hợp lệ sẽ được tạo một file PDF riêng.
+- Mỗi nhân viên hợp lệ tạo một tệp `salary/[Mã NV].pdf`.
+- PDF gồm thông tin đơn vị, kỳ lương, thông tin nhân viên, ngày công, các khoản thu nhập, bảo hiểm, thuế, phạt, tổng khấu trừ, thực lãnh và số tiền bằng chữ.
+- File `process_log.txt` lưu thời gian, cấp độ và chi tiết xử lý.
+- Nếu có bản ghi lỗi, chương trình ghi lại dòng Excel, mã nhân viên và lý do để người dùng kiểm tra.
 
-Thư mục đầu ra:
-
-```text
-salary/
-```
-
-Tên file:
-
-```text
-[Mã NV].pdf
-```
-
-Ví dụ:
-
-```text
-salary/
-├── NV001.pdf
-├── NV002.pdf
-└── NV003.pdf
-```
-
-Phiếu lương chứa các thông tin:
-
-* Thông tin công ty.
-* Mã nhân viên.
-* Họ và tên.
-* Chức vụ.
-* Người phụ thuộc.
-* Ngày công chuẩn.
-* Ngày công đi làm.
-* Lương cơ bản.
-* Lương đóng BHXH.
-* Lương thực tế.
-* Thưởng.
-* Phụ cấp.
-* BHXH.
-* BHYT.
-* BHTN.
-* Thu nhập tính thuế.
-* Thuế TNCN.
-* Phạt.
-* Tổng khấu trừ.
-* Thực lãnh.
-* Số tiền bằng chữ.
-
-## Xử lý lỗi và Logging
-
-Chương trình sử dụng `try...except` để xử lý lỗi trong quá trình đọc dữ liệu và tạo PDF.
-
-Nếu một dòng dữ liệu không hợp lệ, chương trình sẽ:
-
-```text
-Dòng dữ liệu lỗi
-      │
-      ▼
-try...except
-      │
-      ▼
-Ghi lỗi vào process_log.txt
-      │
-      ▼
-Bỏ qua dòng lỗi
-      │
-      ▼
-Tiếp tục xử lý nhân viên tiếp theo
-```
-
-File log:
-
-```text
-process_log.txt
-```
+Tệp PDF được tạo tạm trước khi thay thế file đích, giúp tránh dùng một tệp PDF dở dang nếu bước kết xuất gặp lỗi. Mã nhân viên trùng được phát hiện trước khi xử lý để tránh ghi đè phiếu lương giữa các bản ghi trong cùng bảng.
 
 ## Cài đặt
 
-Khuyến nghị sử dụng:
+Khuyến nghị Python 3.12 trở lên.
 
-```text
-Python 3.12
+```bash
+python -m venv .venv
 ```
 
-Cài đặt các thư viện:
+Windows CMD:
 
 ```cmd
-pip install pandas openpyxl weasyprint
+.venv\Scripts\activate
+python -m pip install -r requirements.txt
 ```
 
-### Windows
+macOS/Linux:
 
-Nếu WeasyPrint gặp lỗi liên quan đến DLL như `libgobject-2.0-0`, cần cài đặt thư viện GTK/MSYS2 phù hợp và cấu hình thư mục DLL.
-
-Trong chương trình hiện tại, đường dẫn Windows được kiểm tra là:
-
-```text
-C:\msys64\ucrt64\bin
+```bash
+source .venv/bin/activate
+python -m pip install -r requirements.txt
 ```
+
+### Lưu ý Windows và WeasyPrint
+
+Nếu WeasyPrint báo thiếu DLL Pango/GLib, cần cài và cấu hình các thư viện hệ thống phù hợp. Script sẽ dùng `C:\\msys64\\ucrt64\\bin` nếu thư mục này tồn tại. Việc cài gói Python thôi có thể chưa đủ trên Windows.
 
 ## Chạy chương trình
 
-Đặt `employees.xlsx` và `salary_report.py` trong cùng thư mục:
-
-```text
-PDF-Automation/
-├── employees.xlsx
-└── salary_report.py
-```
-
-Chạy chương trình:
+Đặt `employees.xlsx` cùng thư mục với `salary_report.py`.
 
 ```cmd
 python salary_report.py
 ```
 
-Sau khi chạy xong, các file PDF được lưu trong `salary/` và log được lưu trong `process_log.txt`.
+Mặc định kỳ lương lấy theo tháng hiện tại của máy. Nếu xử lý kỳ lương khác, hãy chỉ định biến môi trường.
 
-## Quy trình hoạt động
+Windows CMD ví dụ:
 
-```text
-1. Kiểm tra employees.xlsx
-          │
-          ▼
-2. Đọc Excel bằng Pandas
-          │
-          ▼
-3. Kiểm tra các cột bắt buộc
-          │
-          ▼
-4. Xử lý từng nhân viên
-          │
-          ├── Không hợp lệ ──► Ghi lỗi + bỏ qua
-          │
-          ▼
-5. Tính toán bảng lương
-          │
-          ▼
-6. Tạo HTML/CSS
-          │
-          ▼
-7. WeasyPrint tạo PDF
-          │
-          ▼
-8. Kiểm tra file PDF
-          │
-          ▼
-9. Lưu salary/[Mã NV].pdf
-          │
-          ▼
-10. Ghi kết quả vào process_log.txt
+```cmd
+set PAY_MONTH=09/2026
+python salary_report.py
 ```
 
-## Project Status
+PowerShell ví dụ:
 
-Current version:
-
-```text
-V1.0 — Automated Employee Salary PDF Generation
+```powershell
+$env:PAY_MONTH = "09/2026"
+python salary_report.py
 ```
 
-Project tập trung vào việc tự động hóa quá trình tạo phiếu lương PDF từ dữ liệu Excel, có kiểm tra lỗi và ghi log trong quá trình xử lý.
+Định dạng kỳ lương là `MM/YYYY`.
 
-## Project Information
+## Chạy kiểm thử
 
-| Thông tin | Nội dung |
-|---|---|
-| Project | Automated PDF Salary Report Generation |
-| Loại bài | A3 - Tự động tạo báo cáo PDF |
-| Ngôn ngữ | Python |
-| Input | `employees.xlsx` |
-| Output | `salary/[Mã NV].pdf` |
-| Log | `process_log.txt` |
+Cài thêm thư viện phục vụ phát triển:
+
+```bash
+python -m pip install -r requirements-dev.txt
+python -m pytest -q
+```
+
+Các kiểm thử hiện bao gồm định dạng số, giá trị không hợp lệ, các ngưỡng thuế năm 2026, công thức tính lương, cột người phụ thuộc tùy chọn, mã nhân viên trùng và kiểm tra đường đi tạo PDF bằng bộ giả lập.
+
+## An toàn dữ liệu
+
+- **Không đưa bảng lương thật, thông tin cá nhân thật hoặc log chứa dữ liệu nhạy cảm lên repository công khai.**
+- Dùng dữ liệu giả lập để demo.
+- Bảo vệ thư mục chứa PDF và chỉ chia sẻ phiếu lương cho người có thẩm quyền.
+- Nếu `employees.xlsx` hiện tại chứa dữ liệu thật, hãy thay bằng dữ liệu giả lập và loại bỏ bản ghi nhạy cảm khỏi lịch sử Git trước khi tiếp tục dùng repository công khai.
+
+## Phân chia trách nhiệm
+
+- `salary_report.py`: điều phối chương trình, đọc Excel, kiểm tra cấu trúc/mã nhân viên, kết xuất PDF và ghi nhật ký.
+- `salary_calculator.py`: chuẩn hóa giá trị số, tính các thành phần lương, tính thuế theo mô hình được cấu hình và chuyển số thành chữ.
+- `templates/salary_template.html`: mẫu HTML/CSS độc lập với logic tính toán.
+- `tests/test_salary_report.py`: kiểm thử các phép tính, xác thực dữ liệu và luồng ghi PDF với bộ kết xuất giả lập.
+
+## Cấu trúc chính
+
+```text
+PDF-Automation/
+├── salary_report.py
+├── salary_calculator.py
+├── employees.xlsx
+├── README.md
+├── requirements.txt
+├── requirements-dev.txt
+├── .gitignore
+├── templates/
+│   └── salary_template.html
+├── tests/
+│   └── test_salary_report.py
+└── .github/
+    └── workflows/
+        └── tests.yml
+```

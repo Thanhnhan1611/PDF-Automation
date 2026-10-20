@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+
+<style>
+
+@page {
+    size: A4 portrait;
+    margin: 10mm;
+}
+
+body {
+    font-family: "DejaVu Sans", Arial, sans-serif;
+    font-size: 10px;
+    color: #111;
+    margin: 0;
+}
+
+.slip {
+    border: 1.2px solid #222;
+    padding: 12px;
+}
+
+.company {
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.address {
+    font-size: 8.5px;
+    margin-top: 3px;
+}
+
+.title {
+    text-align: center;
+    font-size: 19px;
+    font-weight: bold;
+    margin-top: 14px;
+}
+
+.period {
+    text-align: center;
+    margin-top: 4px;
+    margin-bottom: 14px;
+    font-size: 10px;
+}
+
+.info {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 12px;
+}
+
+.info td {
+    border: 1px solid #333;
+    padding: 5px 6px;
+}
+
+.label {
+    font-weight: bold;
+    background: #eeeeee;
+    width: 18%;
+}
+
+.value {
+    width: 32%;
+}
+
+.salary {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.salary th,
+.salary td {
+    border: 1px solid #333;
+    padding: 5px 6px;
+}
+
+.salary th {
+    text-align: center;
+    background: #eeeeee;
+    font-weight: bold;
+}
+
+.section {
+    font-weight: bold;
+    background: #f2f2f2;
+}
+
+.item {
+    width: 65%;
+}
+
+.amount {
+    width: 35%;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.total td {
+    font-weight: bold;
+    font-size: 12px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+.net td {
+    font-weight: bold;
+    font-size: 14px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.words {
+    margin-top: 12px;
+    padding: 8px;
+    border: 1px solid #333;
+}
+
+.note {
+    margin-top: 14px;
+    font-size: 8.5px;
+}
+
+.signatures {
+    width: 100%;
+    margin-top: 35px;
+    text-align: center;
+}
+
+.signatures td {
+    width: 50%;
+    vertical-align: top;
+}
+
+.signature-space {
+    height: 55px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="slip">
+
+    <div class="company">
+        $company_name
+    </div>
+
+    <div class="address">
+        $company_address
+    </div>
+
+    <div class="title">
+        PHIẾU LƯƠNG
+    </div>
+
+    <div class="period">
+        Tháng $pay_month
+    </div>
+
+
+    <table class="info">
+
+        <tr>
+            <td class="label">Mã nhân viên</td>
+            <td class="value">$employee_id</td>
+
+            <td class="label">Họ và tên</td>
+            <td class="value">$employee_name</td>
+        </tr>
+
+        <tr>
+            <td class="label">Chức vụ</td>
+            <td class="value">$position</td>
+
+            <td class="label">Người phụ thuộc</td>
+            <td class="value">$dependents</td>
+        </tr>
+
+        <tr>
+            <td class="label">Ngày công chuẩn</td>
+            <td class="value">$standard_days</td>
+
+            <td class="label">Ngày công đi làm</td>
+            <td class="value">$actual_days</td>
+        </tr>
+
+        <tr>
+            <td class="label">Lương đóng BHXH</td>
+            <td class="value">$insurance_salary</td>
+
+            <td class="label">Lương cơ bản</td>
+            <td class="value">$basic_salary</td>
+        </tr>
+
+    </table>
+
+
+    <table class="salary">
+
+        <tr>
+            <th colspan="2">
+                CHI TIẾT THU NHẬP
+            </th>
+        </tr>
+
+        <tr>
+            <td class="item">Lương theo ngày</td>
+            <td class="amount">$daily_salary</td>
+        </tr>
+
+        <tr>
+            <td class="item">
+                Lương thực tế
+                ($actual_days/$standard_days ngày)
+            </td>
+            <td class="amount">$actual_salary</td>
+        </tr>
+
+        <tr>
+            <td class="item">Thưởng</td>
+            <td class="amount">$bonus</td>
+        </tr>
+
+        <tr>
+            <td class="item">Phụ cấp</td>
+            <td class="amount">$allowance</td>
+        </tr>
+
+        <tr class="total">
+            <td class="item">TỔNG THU NHẬP</td>
+            <td class="amount">$total_income</td>
+        </tr>
+
+
+        <tr>
+            <th colspan="2">
+                CÁC KHOẢN KHẤU TRỪ
+            </th>
+        </tr>
+
+        <tr>
+            <td class="item">BHXH - 8%</td>
+            <td class="amount">$bhxh</td>
+        </tr>
+
+        <tr>
+            <td class="item">BHYT - 1,5%</td>
+            <td class="amount">$bhyt</td>
+        </tr>
+
+        <tr>
+            <td class="item">BHTN - 1%</td>
+            <td class="amount">$bhtn</td>
+        </tr>
+
+        <tr>
+            <td class="item">Thu nhập tính thuế</td>
+            <td class="amount">$taxable_income</td>
+        </tr>
+
+        <tr>
+            <td class="item">Thuế TNCN</td>
+            <td class="amount">$pit</td>
+        </tr>
+
+        <tr>
+            <td class="item">Phạt</td>
+            <td class="amount">$penalty</td>
+        </tr>
+
+        <tr class="total">
+            <td class="item">TỔNG KHẤU TRỪ</td>
+            <td class="amount">$total_deduction</td>
+        </tr>
+
+
+        <tr class="net">
+            <td class="item">THỰC LÃNH</td>
+            <td class="amount">$net_salary</td>
+        </tr>
+
+    </table>
+
+
+    <div class="words">
+        <strong>Số tiền bằng chữ:</strong>
+        $amount_in_word
+    </div>
+
+
+    <div class="note">
+        Ghi chú: Phiếu được tạo tự động từ dữ liệu bảng lương.
+        Các khoản bảo hiểm và thuế trong bài là mô hình phục vụ
+        mục đích học tập/tự động hóa tài liệu.
+    </div>
+
+
+    <table class="signatures">
+
+        <tr>
+            <td>
+                <strong>NGƯỜI LẬP PHIẾU</strong>
+                <div class="signature-space"></div>
+            </td>
+
+            <td>
+                <strong>NGƯỜI NHẬN LƯƠNG</strong>
+                <div class="signature-space"></div>
+            </td>
+        </tr>
+
+    </table>
+
+</div>
+
+</body>
+</html>
