@@ -64,7 +64,7 @@ def test_pit_2026_brackets(taxable_income, expected_tax):
 
 
 def test_salary_calculation_is_consistent():
-    result = app.calculate_salary_fallback(make_row())
+    result = app.calculate_salary(make_row())
 
     assert result["Lương thực tế"] == Decimal("12000000")
     assert result["Tổng thu nhập"] == Decimal("13500000")
@@ -79,19 +79,19 @@ def test_salary_calculation_is_consistent():
 
 
 def test_missing_optional_dependents_column_defaults_to_zero():
-    result = app.calculate_salary_fallback(make_row())
+    result = app.calculate_salary(make_row())
 
     assert result["Số người phụ thuộc"] == 0
 
 
 def test_fractional_dependent_count_is_rejected():
     with pytest.raises(ValueError, match="số nguyên"):
-        app.calculate_salary_fallback(make_row(**{"Số người phụ thuộc": 1.5}))
+        app.calculate_salary(make_row(**{"Số người phụ thuộc": 1.5}))
 
 
 def test_attendance_greater_than_standard_days_is_rejected():
     with pytest.raises(ValueError, match="ngày công"):
-        app.calculate_salary_fallback(make_row(**{"Ngày công đi làm": 27}))
+        app.calculate_salary(make_row(**{"Ngày công đi làm": 27}))
 
 
 def test_duplicate_employee_ids_are_rejected():
